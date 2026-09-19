@@ -31,7 +31,7 @@ export const AlertItem = memo(function AlertItem({ alert }: { alert: FeedItem })
   return (
     <li
       className={clsx(
-        'flex gap-3 rounded-md border border-line border-l-2 p-3 transition-opacity',
+        'relative flex gap-3 rounded-md border border-line border-l-2 p-3 transition-opacity',
         shell,
         isQueued && 'opacity-60',
       )}
