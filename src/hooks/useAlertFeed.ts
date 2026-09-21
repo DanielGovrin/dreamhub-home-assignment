@@ -20,6 +20,8 @@ const SILENCE_TIMEOUT_MS = 10_000
  */
 const STABLE_AFTER_MS = 3_000
 
+const MAX_ITEMS = 500
+
 interface QueuedMessage {
   id: string
   text: string
