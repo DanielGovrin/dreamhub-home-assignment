@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import clsx from 'clsx'
 import { AlertList } from '@/components/AlertList'
 import { Composer } from '@/components/Composer'
@@ -7,16 +7,21 @@ import { FilterBar } from '@/components/FilterBar'
 import { SearchInput } from '@/components/SearchInput'
 import { useAlertFeed } from '@/hooks/useAlertFeed'
 import { countByType, filterAlerts } from '@/lib/filterAlerts'
+import { loadVisibleTypes, saveVisibleTypes } from '@/lib/persistedFilters'
 import { ALERT_TYPES, type AlertType } from '@/lib/types'
 
 function App() {
   const { items, status, attempt, send, reconnect } = useAlertFeed()
 
-  const [visibleTypes, setVisibleTypes] = useState<Set<AlertType>>(() => new Set(ALERT_TYPES))
+  const [visibleTypes, setVisibleTypes] = useState<Set<AlertType>>(loadVisibleTypes)
   const [searchQuery, setSearchQuery] = useState('')
 
   const deferredQuery = useDeferredValue(searchQuery)
   const isStale = searchQuery !== deferredQuery
+
+  useEffect(() => {
+    saveVisibleTypes(visibleTypes)
+  }, [visibleTypes])
 
   const toggleType = useCallback((type: AlertType) => {
     setVisibleTypes((prev) => {
