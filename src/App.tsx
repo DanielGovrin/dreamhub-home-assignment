@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
+import clsx from 'clsx'
 import { AlertList } from '@/components/AlertList'
 import { Composer } from '@/components/Composer'
 import { ConnectionBadge } from '@/components/ConnectionBadge'
@@ -14,6 +15,9 @@ function App() {
   const [visibleTypes, setVisibleTypes] = useState<Set<AlertType>>(() => new Set(ALERT_TYPES))
   const [searchQuery, setSearchQuery] = useState('')
 
+  const deferredQuery = useDeferredValue(searchQuery)
+  const isStale = searchQuery !== deferredQuery
+
   const toggleType = useCallback((type: AlertType) => {
     setVisibleTypes((prev) => {
       const next = new Set(prev)
@@ -24,11 +28,11 @@ function App() {
 
   const counts = useMemo(() => countByType(items), [items])
   const visible = useMemo(
-    () => filterAlerts(items, { types: visibleTypes, searchQuery }),
-    [items, visibleTypes, searchQuery],
+    () => filterAlerts(items, { types: visibleTypes, searchQuery: deferredQuery }),
+    [items, visibleTypes, deferredQuery],
   )
 
-  const isFiltered = visibleTypes.size !== ALERT_TYPES.length || searchQuery.trim() !== ''
+  const isFiltered = visibleTypes.size !== ALERT_TYPES.length || deferredQuery.trim() !== ''
 
   return (
     <div className="mx-auto flex h-svh max-w-4xl flex-col gap-3 p-4">
@@ -47,7 +51,12 @@ function App() {
           </span>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div
+          className={clsx(
+            'min-h-0 flex-1 overflow-y-auto transition-opacity',
+            isStale && 'opacity-60',
+          )}
+        >
           <AlertList items={visible} isFiltered={isFiltered} />
         </div>
       </section>
