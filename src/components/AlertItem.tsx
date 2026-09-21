@@ -11,9 +11,17 @@ import { Markdown } from './Markdown'
  */
 const TYPE_META: Record<AlertType, { Icon: LucideIcon; icon: string; shell: string }> = {
   info: { Icon: Info, icon: 'text-info', shell: 'border-l-info bg-info-soft/50' },
-  warning: { Icon: TriangleAlert, icon: 'text-warning', shell: 'border-l-warning bg-warning-soft/50' },
+  warning: {
+    Icon: TriangleAlert,
+    icon: 'text-warning',
+    shell: 'border-l-warning bg-warning-soft/50',
+  },
   error: { Icon: CircleX, icon: 'text-error', shell: 'border-l-error bg-error-soft/50' },
-  success: { Icon: CircleCheck, icon: 'text-success', shell: 'border-l-success bg-success-soft/50' },
+  success: {
+    Icon: CircleCheck,
+    icon: 'text-success',
+    shell: 'border-l-success bg-success-soft/50',
+  },
 }
 
 const timeFormat = new Intl.DateTimeFormat(undefined, {
@@ -74,12 +82,7 @@ export const AlertItem = memo(function AlertItem({ alert }: { alert: FeedItem })
     // `relative` matters: the sr-only span below is absolutely positioned, and
     // without a positioned ancestor it escapes the scroll container and
     // stretches the page instead.
-    <li
-      className={clsx(
-        'relative flex gap-3 rounded-md border border-line border-l-2 p-3',
-        shell,
-      )}
-    >
+    <li className={clsx('relative flex gap-3 rounded-md border border-line border-l-2 p-3', shell)}>
       <Icon className={clsx('mt-0.5 size-4 shrink-0', icon)} aria-hidden />
       {/* Colour alone shouldn't carry meaning. */}
       <span className="sr-only">{alert.type}:</span>
@@ -88,7 +91,10 @@ export const AlertItem = memo(function AlertItem({ alert }: { alert: FeedItem })
         <Markdown>{alert.text}</Markdown>
         {/* Narrow screens can't spare a fixed column for the timestamp, so it
             drops below the text instead of squeezing it. */}
-        <time dateTime={iso} className="mt-1 block text-right text-xs tabular-nums text-muted sm:hidden">
+        <time
+          dateTime={iso}
+          className="mt-1 block text-right text-xs tabular-nums text-muted sm:hidden"
+        >
           {stamp}
         </time>
       </div>

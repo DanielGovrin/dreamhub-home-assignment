@@ -158,7 +158,6 @@ export function useAlertFeed() {
 
     window.addEventListener('online', handleOnline)
 
-    setStatus('connecting')
     connect()
 
     return () => {
@@ -206,7 +205,13 @@ export function useAlertFeed() {
   }, [])
 
   /** Restart the connect cycle after the automatic retries gave up. */
-  const reconnect = useCallback(() => setRetryToken((token) => token + 1), [])
+  const reconnect = useCallback(() => {
+    // Status is set here rather than in the effect: this is the event that
+    // caused the change, and `useState` already starts at 'connecting'.
+    setStatus('connecting')
+    setAttempt(0)
+    setRetryToken((token) => token + 1)
+  }, [])
 
   return { items, status, attempt, send, reconnect }
 }

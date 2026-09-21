@@ -1,7 +1,10 @@
 import clsx from 'clsx'
 import type { ConnectionStatus } from '@/lib/types'
 
-const STATUS: Record<ConnectionStatus, { label: string; dot: string; text: string; pulse: boolean }> = {
+const STATUS: Record<
+  ConnectionStatus,
+  { label: string; dot: string; text: string; pulse: boolean }
+> = {
   connecting: { label: 'Connecting…', dot: 'bg-warning', text: 'text-warning', pulse: true },
   open: { label: 'Connected', dot: 'bg-success', text: 'text-success', pulse: false },
   reconnecting: { label: 'Reconnecting…', dot: 'bg-warning', text: 'text-warning', pulse: true },
@@ -26,7 +29,12 @@ export function ConnectionBadge({ status, attempt, onRetry }: ConnectionBadgePro
       <span role="status" className={clsx('flex items-center gap-2 text-xs font-medium', text)}>
         <span className="relative flex size-2">
           {pulse && (
-            <span className={clsx('absolute inline-flex size-full animate-ping rounded-full opacity-75', dot)} />
+            <span
+              className={clsx(
+                'absolute inline-flex size-full animate-ping rounded-full opacity-75',
+                dot,
+              )}
+            />
           )}
           <span className={clsx('relative inline-flex size-2 rounded-full', dot)} />
         </span>

@@ -15,7 +15,9 @@ export function useFollowScroll(items: FeedItem[]) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
 
-  const lastSeenIdRef = useRef<string | null>(null)
+  /** Newest item the user has been shown. State, not a ref: it is read during
+   *  render to size the pill. */
+  const [lastSeenId, setLastSeenId] = useState<string | null>(null)
   const isJumpingRef = useRef(false)
   const prevScrollTopRef = useRef(0)
 
@@ -49,7 +51,7 @@ export function useFollowScroll(items: FeedItem[]) {
   useLayoutEffect(() => {
     if (!isAtBottom && !isJumpingRef.current) return
 
-    lastSeenIdRef.current = newestId
+    setLastSeenId(newestId)
     // Mid-jump, re-aim at the grown bottom rather than the target `scrollTo`
     // fixed when the button was clicked.
     scrollToBottom(isJumpingRef.current ? 'smooth' : 'auto')
@@ -59,10 +61,9 @@ export function useFollowScroll(items: FeedItem[]) {
   const unseenCount = (() => {
     if (isAtBottom) return 0
 
-    const marker = lastSeenIdRef.current
-    if (marker === null) return 0
+    if (lastSeenId === null) return 0
 
-    const index = items.findIndex((item) => item.id === marker)
+    const index = items.findIndex((item) => item.id === lastSeenId)
     // Marker aged out of the capped list, or was filtered away.
     return index === -1 ? items.length : items.length - index - 1
   })()

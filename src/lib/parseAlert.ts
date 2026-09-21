@@ -1,7 +1,6 @@
 import { ALERT_TYPES, type Alert, type AlertType } from './types'
 
-const isAlertType = (value: unknown): value is AlertType =>
-  ALERT_TYPES.includes(value as AlertType)
+const isAlertType = (value: unknown): value is AlertType => ALERT_TYPES.includes(value as AlertType)
 
 export function parseAlert(raw: unknown): Alert | null {
   if (typeof raw !== 'string') return null

@@ -7,15 +7,13 @@ export interface FeedFilters {
   searchQuery: string
 }
 
-
 export function filterAlerts(items: FeedItem[], { types, searchQuery }: FeedFilters): FeedItem[] {
   const needle = searchQuery.trim().toLowerCase()
 
   if (types.size === ALERT_TYPES.length && needle === '') return items
-  
+
   return items.filter(
-    (item) =>
-      types.has(item.type) && (needle === '' || item.text.toLowerCase().includes(needle)),
+    (item) => types.has(item.type) && (needle === '' || item.text.toLowerCase().includes(needle)),
   )
 }
 
