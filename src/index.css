@@ -65,6 +65,20 @@
 }
 
 @layer base {
+  /*
+   * Render native UI (scrollbars, caret, form controls) for the active scheme
+   * instead of always light.
+   */
+  :root {
+    color-scheme: light dark;
+  }
+
+  /* Thin, themed scrollbars rather than the OS default slab. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--fg) 22%, transparent);
+  }
+
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;
