@@ -29,7 +29,7 @@ export function FilterChip({ type, count, active, onToggle }: FilterChipProps) {
       aria-pressed={active}
       onClick={() => onToggle(type)}
       className={clsx(
-        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium capitalize transition-colors',
+        'flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium capitalize transition-colors sm:gap-1.5 sm:px-2.5',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
         active ? activeClass : 'border-line text-muted hover:text-fg',
       )}

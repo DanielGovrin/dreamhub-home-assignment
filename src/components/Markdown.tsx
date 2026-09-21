@@ -5,7 +5,7 @@ export function Markdown({ children }: { children: string }) {
   return (
     <div
       className="
-        text-sm leading-relaxed wrap-anywhere
+        text-sm leading-relaxed break-words
         [&_p]:my-0 [&_p+p]:mt-2
         [&_strong]:font-semibold [&_strong]:text-fg
         [&_em]:italic

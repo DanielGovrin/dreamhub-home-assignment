@@ -9,7 +9,7 @@ interface FilterBarProps {
 
 export function FilterBar({ active, counts, onToggle }: FilterBarProps) {
   return (
-    <div className="flex shrink-0 flex-wrap gap-1.5" role="group" aria-label="Filter by alert type">
+    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by alert type">
       {ALERT_TYPES.map((type) => (
         <FilterChip
           key={type}

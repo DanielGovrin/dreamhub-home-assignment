@@ -42,9 +42,17 @@ export const AlertItem = memo(function AlertItem({ alert }: { alert: FeedItem })
 
       <div className="min-w-0 flex-1">
         <Markdown>{alert.text}</Markdown>
+        {/* Narrow screens can't spare a fixed column for the timestamp, so it
+            drops below the text instead of squeezing it. */}
+        <time
+          dateTime={new Date(alert.timestamp).toISOString()}
+          className="mt-1 block text-right text-xs tabular-nums text-muted sm:hidden"
+        >
+          {timeFormat.format(alert.timestamp)}
+        </time>
       </div>
 
-      <div className="flex shrink-0 flex-col items-end gap-1">
+      <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
         <time
           dateTime={new Date(alert.timestamp).toISOString()}
           className="text-xs tabular-nums text-muted"
