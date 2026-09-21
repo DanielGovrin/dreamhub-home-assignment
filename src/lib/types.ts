@@ -21,3 +21,5 @@ export interface FeedItem extends Alert {
   /** Set only on messages this client sent; absent for server alerts. */
   outbound?: OutboundStatus
 }
+
+export type ConnectionStatus = 'connecting' | 'open' | 'reconnecting' | 'closed'

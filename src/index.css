@@ -65,6 +65,11 @@
 }
 
 @layer base {
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
   body {
     @apply bg-bg text-fg font-sans antialiased;
     -webkit-font-smoothing: antialiased;
