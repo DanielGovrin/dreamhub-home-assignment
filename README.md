@@ -1,7 +1,6 @@
 # Alert Feed
 
-A real-time alert feed over a WebSocket — live events with markdown bodies, type filtering,
-search, and reconnect handling. React 19 + TypeScript + Vite, Tailwind v4.
+Real-time alert feed over a WebSocket. React 19 + TypeScript + Vite, Tailwind v4.
 
 ## Running it
 
@@ -11,6 +10,12 @@ Node 20+ (developed on 22). Two terminals:
 npm install
 npm run server   # terminal 1 — ws://localhost:8080
 npm run dev      # terminal 2 — http://localhost:5173
+```
+
+Tests need neither — the socket is mocked:
+
+```bash
+npm test
 ```
 
 **Option A**, the provided Node server. One adaptation: Vite sets `"type": "module"`, so the
@@ -32,40 +37,32 @@ plain functions over plain data.
 
 **Messages sent while disconnected.** Optimistically echoed and queued: the message appears
 immediately marked `queued`, the text is parked in a ref, and on the next `open` the queue
-flushes in order and items flip to `sent`. Verified by killing the server mid-send.
+flushes in order and items flip to `sent`.
 
 The caveat: this is at-least-once at best. `ws.send()` only guarantees the frame was
 buffered, not delivered. A real implementation needs client-generated ids and server acks.
 
-**Why your messages appear twice.** The provided server doesn't echo your payload — it
-discards it and mints a *new* alert with a fresh id. So the client renders yours itself, and
-the `You said: …` reply is a separate event. I gave outbound messages their own right-aligned
-lane so they don't read as duplicates. A real server would broadcast your message back as
-itself, and then the right move is reconciling by id rather than appending.
-
 **Markdown safety.** `react-markdown` + `remark-gfm`, deliberately no `rehype-raw`. The
-guarantee isn't sanitisation — it's that there's no HTML parsing step at all. I verified it:
-`<script>`, `<img onerror>` and `<iframe>` render as literal text, and `[x](javascript:…)`
-produces an empty `href`. It doesn't stop link text lying about its destination; only a CSP
-would.
+guarantee isn't sanitisation — it's that there's no HTML parsing step at all, so raw HTML
+arrives as text. `defaultUrlTransform` strips dangerous schemes from links. It doesn't stop
+link text lying about its destination; only a CSP would.
 
-**Reconnect.** Exponential backoff 500ms → 8s cap with ±50% jitter (without jitter, clients
-reconnect in lockstep and stampede a recovering server). After 8 attempts the badge shows
-Disconnected with a manual Retry.
+**Reconnect.** Exponential backoff 500ms → 8s cap, with ±50% jitter. After 8 attempts the
+badge shows Disconnected with a manual Retry.
 
 Three cases `onclose` alone misses:
 
 - *Silent connections* — if the peer vanishes without a close frame the socket sits in `OPEN`
   forever. 10s of silence is treated as dead. The handler schedules the retry directly rather
   than calling `close()` and waiting: against a frozen peer the closing handshake never
-  completes, so `onclose` never fires. Found by suspending the server with `SIGSTOP`.
+  completes, so `onclose` never fires.
 - *Flapping* — `attemptCount` resets only after a connection survives 3s, so a server that
   accepts and instantly drops still backs off.
 - *Coming back online* — `window.online` skips the remaining backoff.
 
-**No component library.** I started with shadcn and removed it. Every control here is a native
-element; there's no modal, dropdown or focus trap, which is what headless primitives exist to
-solve. It was pulling in `@base-ui/react`, `cva` and its own CLI for a styled `<button>`.
+**No component library.** I started with shadcn and removed it — every control here is a
+native element, with no modal, dropdown or focus trap to justify `@base-ui/react`, `cva` and a
+CLI for a styled `<button>`.
 
 Kept: Tailwind, `lucide-react`, `clsx`, `react-markdown`. The theme is ~70 lines of semantic
 tokens that flip on `prefers-color-scheme`, so no component needs a `dark:` variant.
@@ -94,25 +91,18 @@ replaying yesterday's alerts in a live panel is arguably wrong.
 
 - **Jump-to-latest is unfinished.** Clicking the pill doesn't reliably land at the bottom when
   messages arrive mid-animation — `scrollTo` fixes its target at call time and the feed grows
-  past it. Degrades gracefully (scroll manually), but it's a real bug.
+  past it. Degrades gracefully: scrolling manually still works.
 - **No connect timeout.** If a server accepts TCP but never completes the handshake, the socket
   stays `CONNECTING`, `onclose` never fires, and the badge sticks on "attempt 1". Same class as
   the silent-connection bug; fix is a timeout calling the retry path directly.
-- **Filter chips wrap to two rows** on narrow phones. Functional, slightly untidy.
-- **No tests yet** — see below.
 
-## On testing
+## Testing
 
-The bugs I actually hit weren't logic bugs: an absolutely positioned `sr-only` span escaping
-the scroll container and stretching the page, a scroll tolerance so generous that small
-scrolls never detached, interpolated Tailwind class names silently producing nothing. Unit
-tests would have caught none of them.
-
-So the plan is Playwright with `routeWebSocket`, which mocks the socket and makes the feed
-deterministic instead of racing a server that pushes every 2 seconds. That covers scroll
-behaviour and reconnect, and lets the markdown payloads above be asserted against a real
-browser rather than a fake DOM. Its runner also handles the pure functions
-(`reconnectDelay`, `filterAlerts`, `parseAlert`), so it's one tool rather than two.
+`npm test` runs Playwright. This UI's risk sits in browser behaviour — scroll following,
+reconnect, what the markdown renderer puts in the DOM — so the tests run against a real
+browser rather than a fake one. `routeWebSocket` intercepts the socket, which makes the feed
+deterministic instead of racing a server pushing every 2 seconds, and makes reconnect
+testable by closing the mock.
 
 ## Accessibility
 
