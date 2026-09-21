@@ -4,8 +4,10 @@ import { AlertList } from '@/components/AlertList'
 import { Composer } from '@/components/Composer'
 import { ConnectionBadge } from '@/components/ConnectionBadge'
 import { FilterBar } from '@/components/FilterBar'
+import { NewMessagesPill } from '@/components/NewMessagesPill'
 import { SearchInput } from '@/components/SearchInput'
 import { useAlertFeed } from '@/hooks/useAlertFeed'
+import { useFollowScroll } from '@/hooks/useFollowScroll'
 import { countByType, filterAlerts } from '@/lib/filterAlerts'
 import { loadVisibleTypes, saveVisibleTypes } from '@/lib/persistedFilters'
 import { ALERT_TYPES, type AlertType } from '@/lib/types'
@@ -39,6 +41,8 @@ function App() {
 
   const isFiltered = visibleTypes.size !== ALERT_TYPES.length || deferredQuery.trim() !== ''
 
+  const { scrollRef, handleScroll, unseenCount, jumpToLatest } = useFollowScroll(visible)
+
   return (
     <div className="mx-auto flex h-svh max-w-4xl flex-col gap-3 p-4">
       <header className="flex flex-wrap items-center gap-2">
@@ -48,7 +52,8 @@ function App() {
         <FilterBar active={visibleTypes} counts={counts} onToggle={toggleType} />
       </header>
 
-      <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-line bg-surface">
+      {/* `relative` anchors the absolutely-positioned pill to this panel. */}
+      <section className="relative flex min-h-0 flex-1 flex-col rounded-lg border border-line bg-surface">
         <div className="flex shrink-0 items-center justify-between border-b border-line px-3 py-2">
           <ConnectionBadge status={status} attempt={attempt} onRetry={reconnect} />
           <span className="text-xs tabular-nums text-muted">
@@ -57,6 +62,8 @@ function App() {
         </div>
 
         <div
+          ref={scrollRef}
+          onScroll={handleScroll}
           className={clsx(
             'min-h-0 flex-1 overflow-y-auto transition-opacity',
             isStale && 'opacity-60',
@@ -64,6 +71,8 @@ function App() {
         >
           <AlertList items={visible} isFiltered={isFiltered} />
         </div>
+
+        {unseenCount > 0 && <NewMessagesPill count={unseenCount} onClick={jumpToLatest} />}
       </section>
 
       <Composer onSend={send} />
