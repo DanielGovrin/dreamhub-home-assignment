@@ -129,7 +129,7 @@ export function useAlertFeed() {
         armSilenceTimer()
 
         const alert = parseAlert(event.data)
-        if (alert) setItems((prev) => [...prev, alert])
+        if (alert) setItems((prev) => [...prev, alert].slice(-MAX_ITEMS))
       }
 
       // `onerror` is always followed by `onclose`, so retries live in one place.
@@ -189,16 +189,14 @@ export function useAlertFeed() {
 
     // Local echo: the server replies with a *new* `You said: …` alert rather
     // than returning this message, so the feed has to show it itself.
-    setItems((prev) => [
-      ...prev,
-      {
-        id,
-        type: 'info',
-        text: trimmed,
-        timestamp: Date.now(),
-        outbound: openSocket ? 'sent' : 'queued',
-      },
-    ])
+    const optimistic: FeedItem = {
+      id,
+      type: 'info',
+      text: trimmed,
+      timestamp: Date.now(),
+      outbound: openSocket ? 'sent' : 'queued',
+    }
+    setItems((prev) => [...prev, optimistic].slice(-MAX_ITEMS))
 
     if (openSocket) {
       openSocket.send(trimmed)

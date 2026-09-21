@@ -1,29 +1,23 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { FeedItem } from '@/lib/types'
 
-/**
- * Fractional scroll heights mean `scrollTop + clientHeight` rarely equals
- * `scrollHeight` exactly, so "at the bottom" needs a tolerance.
- */
-const BOTTOM_TOLERANCE_PX = 48
+/** Only wide enough to absorb fractional scroll heights. */
+const BOTTOM_TOLERANCE_PX = 16
 
 /**
- * Keeps a feed pinned to its newest item while the user is at the live edge,
- * and counts what arrived after they scrolled away.
+ * Pins a feed to its newest item while the user is at the live edge, and
+ * counts what arrived after they scrolled away.
  *
- * `items` should be the *filtered* list: counting alerts the current filters
- * hide would produce a pill that jumps you to the bottom and changes nothing.
+ * Pass the *filtered* list — counting hidden alerts would show a pill that
+ * jumps to the bottom and changes nothing.
  */
 export function useFollowScroll(items: FeedItem[]) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
 
-  /**
-   * Newest item the user has been shown. A ref rather than state: it only
-   * changes while pinned to the bottom, where a re-render is already happening
-   * for the new item anyway.
-   */
   const lastSeenIdRef = useRef<string | null>(null)
+  const isJumpingRef = useRef(false)
+  const prevScrollTopRef = useRef(0)
 
   const newestId = items.length > 0 ? items[items.length - 1].id : null
 
@@ -31,9 +25,18 @@ export function useFollowScroll(items: FeedItem[]) {
     const element = scrollRef.current
     if (!element) return
 
-    const distanceFromBottom =
-      element.scrollHeight - element.scrollTop - element.clientHeight
-    setIsAtBottom(distanceFromBottom <= BOTTOM_TOLERANCE_PX)
+    const { scrollTop, scrollHeight, clientHeight } = element
+    const atBottom = scrollHeight - scrollTop - clientHeight <= BOTTOM_TOLERANCE_PX
+
+    // A jump only scrolls downward, so upward movement means the user took
+    // over. Direction covers every input; a `wheel` listener missed keyboard
+    // and scrollbar drags.
+    if (atBottom || (isJumpingRef.current && scrollTop < prevScrollTopRef.current)) {
+      isJumpingRef.current = false
+    }
+
+    prevScrollTopRef.current = scrollTop
+    setIsAtBottom(atBottom)
   }, [])
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior) => {
@@ -42,18 +45,17 @@ export function useFollowScroll(items: FeedItem[]) {
     element.scrollTo({ top: element.scrollHeight, behavior })
   }, [])
 
-  // Layout effect so the scroll happens before paint — otherwise the feed
-  // visibly jumps after each new message.
+  // Layout effect so the scroll lands before paint, not as a visible jump.
   useLayoutEffect(() => {
-    if (!isAtBottom) return
+    if (!isAtBottom && !isJumpingRef.current) return
+
     lastSeenIdRef.current = newestId
-    scrollToBottom('auto')
+    // Mid-jump, re-aim at the grown bottom rather than the target `scrollTo`
+    // fixed when the button was clicked.
+    scrollToBottom(isJumpingRef.current ? 'smooth' : 'auto')
   }, [newestId, isAtBottom, scrollToBottom])
 
-  /**
-   * Derived rather than accumulated, so it stays correct when filters change
-   * — there is no counter that can drift.
-   */
+  // Derived rather than accumulated, so filter changes can't leave it drifting.
   const unseenCount = (() => {
     if (isAtBottom) return 0
 
@@ -61,14 +63,14 @@ export function useFollowScroll(items: FeedItem[]) {
     if (marker === null) return 0
 
     const index = items.findIndex((item) => item.id === marker)
-    // Marker aged out of the list (or was filtered away): treat all as unseen.
+    // Marker aged out of the capped list, or was filtered away.
     return index === -1 ? items.length : items.length - index - 1
   })()
 
   const jumpToLatest = useCallback(() => {
-    // Deliberately does *not* set `isAtBottom` — that would fire the follow
-    // effect's instant scroll and cancel the animation. The scroll events the
-    // smooth scroll emits flip the flag once it actually arrives.
+    isJumpingRef.current = true
+    // Setting `isAtBottom` here would trigger the effect's instant scroll and
+    // cancel the animation; the scroll events flip it on arrival instead.
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     scrollToBottom(prefersReducedMotion ? 'auto' : 'smooth')
   }, [scrollToBottom])

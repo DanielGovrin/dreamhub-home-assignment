@@ -24,16 +24,60 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
 })
 
 export const AlertItem = memo(function AlertItem({ alert }: { alert: FeedItem }) {
-  const { Icon, icon, shell } = TYPE_META[alert.type]
   const isQueued = alert.outbound === 'queued'
   const isFailed = alert.outbound === 'failed'
 
+  /**
+   * Messages this client sent get their own lane. The server replies with a
+   * separate `You said: …` alert rather than echoing the original, so without
+   * a visual distinction the feed shows what looks like a duplicate.
+   */
+  if (alert.outbound) {
+    return (
+      <li
+        className={clsx(
+          'relative flex max-w-[85%] gap-3 self-end rounded-md border border-line border-r-2 border-r-fg/40 bg-fg/5 p-3 transition-opacity',
+          isQueued && 'opacity-60',
+        )}
+      >
+        <span className="sr-only">You sent:</span>
+
+        <div className="min-w-0 flex-1">
+          <Markdown>{alert.text}</Markdown>
+        </div>
+
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className="text-xs font-medium text-muted">You</span>
+          <time
+            dateTime={new Date(alert.timestamp).toISOString()}
+            className="text-xs tabular-nums text-muted"
+          >
+            {timeFormat.format(alert.timestamp)}
+          </time>
+          {isQueued && (
+            <span className="flex items-center gap-1 text-xs text-muted">
+              <Clock className="size-3" aria-hidden />
+              queued
+            </span>
+          )}
+          {isFailed && <span className="text-xs text-error">failed</span>}
+        </div>
+      </li>
+    )
+  }
+
+  const { Icon, icon, shell } = TYPE_META[alert.type]
+  const stamp = timeFormat.format(alert.timestamp)
+  const iso = new Date(alert.timestamp).toISOString()
+
   return (
+    // `relative` matters: the sr-only span below is absolutely positioned, and
+    // without a positioned ancestor it escapes the scroll container and
+    // stretches the page instead.
     <li
       className={clsx(
-        'relative flex gap-3 rounded-md border border-line border-l-2 p-3 transition-opacity',
+        'relative flex gap-3 rounded-md border border-line border-l-2 p-3',
         shell,
-        isQueued && 'opacity-60',
       )}
     >
       <Icon className={clsx('mt-0.5 size-4 shrink-0', icon)} aria-hidden />
@@ -44,29 +88,14 @@ export const AlertItem = memo(function AlertItem({ alert }: { alert: FeedItem })
         <Markdown>{alert.text}</Markdown>
         {/* Narrow screens can't spare a fixed column for the timestamp, so it
             drops below the text instead of squeezing it. */}
-        <time
-          dateTime={new Date(alert.timestamp).toISOString()}
-          className="mt-1 block text-right text-xs tabular-nums text-muted sm:hidden"
-        >
-          {timeFormat.format(alert.timestamp)}
+        <time dateTime={iso} className="mt-1 block text-right text-xs tabular-nums text-muted sm:hidden">
+          {stamp}
         </time>
       </div>
 
-      <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
-        <time
-          dateTime={new Date(alert.timestamp).toISOString()}
-          className="text-xs tabular-nums text-muted"
-        >
-          {timeFormat.format(alert.timestamp)}
-        </time>
-        {isQueued && (
-          <span className="flex items-center gap-1 text-xs text-muted">
-            <Clock className="size-3" aria-hidden />
-            queued
-          </span>
-        )}
-        {isFailed && <span className="text-xs text-error">failed</span>}
-      </div>
+      <time dateTime={iso} className="hidden shrink-0 text-xs tabular-nums text-muted sm:block">
+        {stamp}
+      </time>
     </li>
   )
 })
